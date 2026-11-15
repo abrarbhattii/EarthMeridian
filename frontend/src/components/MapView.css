@@ -1,0 +1,58 @@
+.map-pane {
+  position: relative;
+  height: 100%;
+  min-height: 0;
+  background: var(--panel-2);
+}
+
+.map-canvas {
+  height: 100%;
+  width: 100%;
+  background: var(--panel-2);
+}
+
+.map-canvas img {
+  max-width: none;
+  max-height: none;
+}
+
+.map-summary,
+.legend {
+  position: absolute;
+  z-index: 500;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.map-summary {
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: min(560px, calc(100% - 48px));
+  margin: 0;
+  border-radius: 10px;
+  padding: 6px 12px;
+  text-align: center;
+  font-size: 0.82rem;
+}
+
+.legend {
+  left: 8px;
+  bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 0.78rem;
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  display: inline-block;
+}
+

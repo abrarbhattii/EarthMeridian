@@ -1,0 +1,95 @@
+html,
+body,
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
+.shell {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.workspace {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+}
+
+.workspace.page-only {
+  grid-template-columns: 1fr;
+}
+
+.stage {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.stage-switch {
+  flex: none;
+  display: flex;
+  gap: 6px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.stage-switch button {
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--text);
+  border-radius: 999px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.stage-switch button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.stage-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage-body.scroll {
+  overflow: auto;
+}
+
+.boot,
+.map-error {
+  color: var(--accent);
+}
+
+.map-error {
+  position: absolute;
+  z-index: 600;
+  top: 52px;
+  left: 12px;
+  margin: 0;
+  background: var(--bg);
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+
+
+@media (max-width: 800px) {
+  .workspace {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+}
