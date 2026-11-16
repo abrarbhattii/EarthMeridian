@@ -57,7 +57,7 @@ export default function App() {
   const [examplesOpen, setExamplesOpen] = useState(false);
   const page = view === "about" || view === "credits";
   const readings = readingsFrom(study.result, study.comparison);
-  const selectedNames = areas.selected.map((item) => item.name);
+  const selectedNames = areas.slots.filter(Boolean).map((item) => item.name);
   const summary = matchingSummary(study.result, study.comparison, selectedNames);
   const comparing = Boolean(study.form && study.form.mode === "compare");
   const mapShared = {
@@ -66,7 +66,7 @@ export default function App() {
     countries: areas.countries,
     areas: areas.level === "country" ? areas.countries : areas.areas,
     cities: areas.cities,
-    onPick: areas.pick,
+    variable: study.form ? study.form.variable : "T2M",
   };
 
   function openMap(mode) {
@@ -83,7 +83,7 @@ export default function App() {
   function onSubmit(event) {
     event.preventDefault();
     setView("map");
-    study.runPlaces(areas.selected);
+    study.runPlaces(areas.slots);
   }
 
   return (
@@ -99,10 +99,7 @@ export default function App() {
         theme={theme}
         onToggleTheme={toggleTheme}
       />
-      {!study.catalog || !study.form ? (
-        <p className="boot">{study.error || "Loading EarthMeridian..."}</p>
-      ) : (
-        <div className={page ? "workspace page-only" : "workspace"}>
+      <div className={page ? "workspace page-only" : "workspace"}>
           {!page && (
             <Sidebar
               catalog={study.catalog}
@@ -138,7 +135,7 @@ export default function App() {
                   ) : comparing ? (
                     <div className="map-split">
                       {[0, 1].map((index) => {
-                        const item = areas.selected[index];
+                        const item = areas.slots[index];
                         const row = rowFor(item && item.name, study.result, study.comparison);
                         return (
                           <div className="map-column" key={index}>
@@ -147,6 +144,7 @@ export default function App() {
                               selected={item ? [item] : []}
                               readings={row ? readingsFrom(row, null) : {}}
                               summary={row ? row.trend.verdict : ""}
+                              onPick={(picked) => areas.pickAt(index, picked)}
                             />
                             <SeriesStrip result={row} />
                           </div>
@@ -157,9 +155,10 @@ export default function App() {
                     <div className="map-stage">
                       <MapView
                         {...mapShared}
-                        selected={areas.selected}
+                        selected={areas.slots[0] ? [areas.slots[0]] : []}
                         readings={readings}
                         summary={summary}
+                        onPick={(picked) => areas.pickAt(0, picked)}
                       />
                       <SeriesStrip
                         result={
@@ -174,7 +173,6 @@ export default function App() {
             )}
           </main>
         </div>
-      )}
       <Footer />
     </div>
   );

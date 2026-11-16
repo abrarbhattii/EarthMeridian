@@ -44,3 +44,11 @@
   margin: 4px 0 0;
   color: var(--muted);
 }
+
+@media (max-width: 800px) {
+  .credits {
+    height: auto;
+    min-height: 70vh;
+    padding: 20px 16px 28px;
+  }
+}

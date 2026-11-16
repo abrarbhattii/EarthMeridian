@@ -6,7 +6,7 @@ export default function AnalysisPanel({ result, comparison, loading, error }) {
   return (
     <section className="analysis" aria-live="polite">
       {error && <p className="banner">{error}</p>}
-      {loading && <p className="status-line">Asking NASA POWER...</p>}
+      {loading && <p className="status-line">Please wait for the server response.</p>}
       {!loading && !error && !result && !comparison && (
         <p className="status-line">Choose a location, then use Run analysis.</p>
       )}

@@ -99,6 +99,17 @@
 }
 
 @media (max-width: 800px) {
+  .about {
+    height: auto;
+    min-height: 70vh;
+    padding: 20px 16px 28px;
+    justify-content: flex-start;
+  }
+
+  .about h2 {
+    font-size: 1.6rem;
+  }
+
   .cards {
     grid-template-columns: 1fr;
   }

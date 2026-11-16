@@ -1,37 +1,17 @@
-import { useEffect, useRef, useState } from "react";
-import { compare, friendlyError, getCatalog, investigate } from "../api";
+import { useRef, useState } from "react";
+import { compare, friendlyError, investigate } from "../api";
+import { CATALOG } from "../data/catalog";
 import { checkForm, formFromDemo } from "../lib/form";
 
 export function useInvestigation() {
-  const [catalog, setCatalog] = useState(null);
-  const [form, setForm] = useState(null);
+  const [catalog] = useState(CATALOG);
+  const [form, setForm] = useState(() => formFromDemo(CATALOG.demos[0], CATALOG));
   const [activeExample, setActiveExample] = useState("");
   const [result, setResult] = useState(null);
   const [comparison, setComparison] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const requestId = useRef(0);
-
-  useEffect(() => {
-    let ignore = false;
-    getCatalog()
-      .then((data) => {
-        if (ignore) return;
-        setCatalog(data);
-        const demo = data.demos[0];
-        setForm(formFromDemo(demo, data));
-        setLoading(false);
-      })
-      .catch((err) => {
-        if (!ignore) {
-          setError(friendlyError(err));
-          setLoading(false);
-        }
-      });
-    return () => {
-      ignore = true;
-    };
-  }, []);
 
   async function run(nextForm) {
     const problem = checkForm(nextForm);
@@ -98,28 +78,30 @@ export function useInvestigation() {
     run(next);
   }
 
-  function runPlaces(places) {
+  function runPlaces(slots) {
     if (!form) return;
-    if (form.mode === "compare" && places.length < 2) {
-      setError("Click two areas on the map. Both stay at the same level.");
+    const left = slots && slots[0];
+    const right = slots && slots[1];
+    if (form.mode === "compare" && (!left || !right)) {
+      setError("Click a boundary on each map. Both stay at the same level.");
       return;
     }
-    if (places.length < 1) {
+    if (!left) {
       setError("Click an area on the map first.");
       return;
     }
     const next = {
       ...form,
       placeId: "custom",
-      placeName: places[0].name,
-      lat: String(places[0].lat),
-      lon: String(places[0].lon),
+      placeName: left.name,
+      lat: String(left.lat),
+      lon: String(left.lon),
     };
-    if (places[1]) {
+    if (form.mode === "compare") {
       next.placeId2 = "custom";
-      next.placeName2 = places[1].name;
-      next.lat2 = String(places[1].lat);
-      next.lon2 = String(places[1].lon);
+      next.placeName2 = right.name;
+      next.lat2 = String(right.lat);
+      next.lon2 = String(right.lon);
     }
     setActiveExample("");
     setForm(next);

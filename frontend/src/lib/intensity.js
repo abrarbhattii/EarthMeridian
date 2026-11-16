@@ -47,18 +47,29 @@ export function symbolCount(variable, value) {
   return 0;
 }
 
+function scaleLabel(value, unit) {
+  const number = value < 0 ? `−${Math.abs(value)}` : String(value);
+  return `${number} ${unit}`;
+}
+
 export function legendFor(variable) {
+  const stops = [0, 0.5, 1].map((t) => colorFor(variable, t));
+  const range = RANGES[variable] || [0, 1];
+  if (variable === "T2M") {
+    return {
+      stops,
+      lowLabel: scaleLabel(range[0], "°C"),
+      highLabel: scaleLabel(range[1], "°C"),
+    };
+  }
   if (variable === "PRECTOTCORR") {
-    return { low: "#7eb6d6", high: "#0b4f78", lowLabel: "Less rain", highLabel: "More rain" };
+    return { stops, lowLabel: "Less rain", highLabel: "More rain" };
   }
   if (variable === "RH2M") {
-    return { low: "#d7b8ea", high: "#5e2a86", lowLabel: "Drier", highLabel: "More humid" };
+    return { stops, lowLabel: "Drier", highLabel: "More humid" };
   }
   if (variable === "WS2M") {
-    return { low: "#b9cbe0", high: "#1d4e89", lowLabel: "Slower", highLabel: "Faster" };
+    return { stops, lowLabel: "Slower", highLabel: "Faster" };
   }
-  if (variable === "ALLSKY_SFC_SW_DWN") {
-    return { low: "#fff3bf", high: "#9b2226", lowLabel: "Dimmer", highLabel: "Stronger sun" };
-  }
-  return { low: "#2f6fad", high: "#b42318", lowLabel: "Cooler", highLabel: "Hotter" };
+  return { stops, lowLabel: "Dimmer", highLabel: "Stronger sun" };
 }

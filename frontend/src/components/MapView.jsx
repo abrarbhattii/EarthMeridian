@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import L from "leaflet";
 import { CircleMarker, GeoJSON, MapContainer, TileLayer, useMap, ZoomControl } from "react-leaflet";
 import FieldLayer from "./FieldLayer";
 import { featureBounds, toCollection } from "../lib/geo";
@@ -10,8 +11,20 @@ const LIGHT_TILES =
 const DARK_TILES =
   "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}";
 
+const OPENING = { center: [30.4, 69.4], zoom: 5 };
+
 function paintFor(value, variable) {
   return colorFor(variable, intensity(value, variable));
+}
+
+function zoomTo(map, items, animate) {
+  if (!items.length) {
+    map.setView(OPENING.center, OPENING.zoom, { animate });
+    return;
+  }
+  const box = featureBounds(items);
+  if (!box) map.setView([items[0].lat, items[0].lon], 4, { animate });
+  else map.fitBounds(box, { padding: [28, 28], maxZoom: 7, animate });
 }
 
 function Fit({ items }) {
@@ -27,9 +40,7 @@ function Fit({ items }) {
   useEffect(() => {
     if (!items.length) return undefined;
     try {
-      const box = featureBounds(items);
-      if (!box) map.setView([items[0].lat, items[0].lon], 4, { animate: false });
-      else map.fitBounds(box, { padding: [28, 28], maxZoom: 7, animate: false });
+      zoomTo(map, items, false);
     } catch (err) {
       // The map can unmount while Leaflet is still moving.
     }
@@ -44,7 +55,52 @@ function Fit({ items }) {
 
   useEffect(() => {
     const timer = setTimeout(() => map.invalidateSize(), 120);
-    return () => clearTimeout(timer);
+    function onResize() {
+      map.invalidateSize();
+    }
+    window.addEventListener("resize", onResize);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("resize", onResize);
+    };
+  }, [map]);
+
+  return null;
+}
+
+const HOME_ICON =
+  '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.2 12 4l8 7.2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M7.2 10.2V19h9.6v-8.8" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>';
+
+function HomeButton({ items }) {
+  const map = useMap();
+  const itemsRef = useRef(items);
+  itemsRef.current = items;
+
+  useEffect(() => {
+    const control = L.control({ position: "topright" });
+    control.onAdd = () => {
+      const bar = L.DomUtil.create("div", "leaflet-bar leaflet-control home-bar");
+      const button = L.DomUtil.create("a", "home-control", bar);
+      button.href = "#";
+      button.title = "Zoom to boundary";
+      button.setAttribute("role", "button");
+      button.setAttribute("aria-label", "Zoom to boundary");
+      button.innerHTML = HOME_ICON;
+      L.DomEvent.disableClickPropagation(bar);
+      L.DomEvent.on(button, "click", (event) => {
+        L.DomEvent.preventDefault(event);
+        try {
+          zoomTo(map, itemsRef.current, true);
+        } catch (err) {
+          // The map can unmount while Leaflet is still moving.
+        }
+      });
+      return bar;
+    };
+    control.addTo(map);
+    return () => {
+      control.remove();
+    };
   }, [map]);
 
   return null;
@@ -60,13 +116,13 @@ export default function MapView({
   readings,
   summary,
   onPick,
+  variable,
 }) {
   const dark = theme === "dark";
   const selectedIds = new Set(selected.map((item) => item.id));
   const focus = selected.length ? selected : level === "province" || level === "district" ? areas : [];
   const layerKey = `${level}-${areas.length}-${selected.map((item) => item.id).join(",")}-${Object.keys(readings).length}`;
-  const shown = selected.map((item) => readings[item.name]).find((reading) => reading && reading.variable);
-  const legend = legendFor(shown ? shown.variable : "T2M");
+  const legend = legendFor(variable || "T2M");
 
   function styleFeature(feature) {
     const id = feature.properties.id;
@@ -97,6 +153,7 @@ export default function MapView({
     <div className="map-pane">
       <MapContainer center={[30.4, 69.4]} zoom={5} className="map-canvas" scrollWheelZoom zoomControl={false}>
         <ZoomControl position="topright" />
+        <HomeButton items={focus} />
         <TileLayer key={theme} attribution="Tiles &copy; Esri" url={dark ? DARK_TILES : LIGHT_TILES} />
         <Fit items={focus} />
         {level !== "country" && countries.length > 0 && (
@@ -132,9 +189,11 @@ export default function MapView({
         <FieldLayer areas={selected} readings={readings} />
       </MapContainer>
       <div className="legend">
-        <i className="swatch" style={{ background: legend.low }} />
         <span>{legend.lowLabel}</span>
-        <i className="swatch" style={{ background: legend.high }} />
+        <i
+          className="ramp"
+          style={{ background: `linear-gradient(90deg, ${legend.stops[0]} 0%, ${legend.stops[1]} 50%, ${legend.stops[2]} 100%)` }}
+        />
         <span>{legend.highLabel}</span>
       </div>
       {summary && <p className="map-summary">{summary}</p>}

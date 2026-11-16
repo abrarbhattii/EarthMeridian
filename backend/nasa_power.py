@@ -48,17 +48,21 @@ def fetch_raw(variable, lat, lon, start, end):
 
 
 def get_raw(variable, lat, lon, start, end):
-    """Return (payload, from_cache). Live data is saved for the next time."""
+    """Return (payload, from_cache).
+
+    A saved copy in backend/data is used immediately so a slow NASA response
+    does not hold the analysis. Live data is fetched only when no copy exists,
+    and that copy is kept for the next request.
+    """
     path = _cache_path(variable, lat, lon, start, end)
+    if path.exists():
+        return json.loads(path.read_text(encoding="utf-8")), True
     try:
         payload = fetch_raw(variable, lat, lon, start, end)
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(payload), encoding="utf-8")
         return payload, False
     except Exception as exc:
-        if path.exists():
-            print(f"NASA POWER failed ({exc}). Using saved file {path.name}.")
-            return json.loads(path.read_text(encoding="utf-8")), True
         raise RuntimeError(
             "Could not reach NASA POWER, and there is no saved copy for this place. "
             "Check the connection, or try one of the demonstration buttons."

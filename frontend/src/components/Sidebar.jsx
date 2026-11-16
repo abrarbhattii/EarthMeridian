@@ -108,8 +108,9 @@ export default function Sidebar({
         <p className="picked">{areas.selected.map((item) => item.name).join("  ·  ")}</p>
       )}
       </div>
+      {loading && <p className="hint warn">Please wait for the server response.</p>}
       <button className="run" type="submit" disabled={loading}>
-        {loading ? "Loading data..." : "Run analysis"}
+        {loading ? "Please wait for the server response..." : "Run analysis"}
       </button>
     </form>
   );

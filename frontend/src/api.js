@@ -1,3 +1,10 @@
+const SERVER_WAIT_MS = 60000;
+const SERVER_ERROR = "The server did not respond. Check that it is running, then try again.";
+
+function delay(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 async function readJson(response) {
   let body = null;
   try {
@@ -10,28 +17,49 @@ async function readJson(response) {
     if (typeof detail === "string") {
       throw new Error(detail);
     }
-    throw new Error("Check the place and the years, then try again.");
+    const error = new Error(SERVER_ERROR);
+    error.serverDown = true;
+    throw error;
   }
   return body;
 }
 
-export function getCatalog() {
-  return fetch("/api/catalog").then(readJson);
+async function fetchJson(url) {
+  const started = Date.now();
+  while (Date.now() - started < SERVER_WAIT_MS) {
+    const remaining = SERVER_WAIT_MS - (Date.now() - started);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), remaining);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      return await readJson(response);
+    } catch (err) {
+      const down = !err || err.serverDown || err.name === "AbortError" || err.message === "Failed to fetch";
+      if (!down || Date.now() - started >= SERVER_WAIT_MS) {
+        if (down) throw new Error(SERVER_ERROR);
+        throw err;
+      }
+      await delay(1500);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  throw new Error(SERVER_ERROR);
 }
 
 export function investigate(query) {
   const params = new URLSearchParams(query);
-  return fetch(`/api/investigate?${params.toString()}`).then(readJson);
+  return fetchJson(`/api/investigate?${params.toString()}`);
 }
 
 export function compare(query) {
   const params = new URLSearchParams(query);
-  return fetch(`/api/compare?${params.toString()}`).then(readJson);
+  return fetchJson(`/api/compare?${params.toString()}`);
 }
 
 export function friendlyError(err) {
-  if (!err || err.message === "Failed to fetch") {
-    return "Could not reach the Meridian server. Start the backend and try again.";
+  if (!err || err.message === "Failed to fetch" || err.name === "AbortError") {
+    return SERVER_ERROR;
   }
   return err.message;
 }

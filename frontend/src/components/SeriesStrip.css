@@ -55,3 +55,31 @@
 .map-split .map-column {
   background: var(--bg);
 }
+
+@media (max-width: 980px) {
+  .map-stage,
+  .map-column {
+    height: auto;
+  }
+
+  .map-stage .map-pane,
+  .map-column .map-pane {
+    flex: none;
+    height: 62vh;
+    min-height: 320px;
+  }
+
+  .map-split {
+    grid-template-columns: 1fr;
+    height: auto;
+  }
+
+  .map-column .map-pane {
+    height: 48vh;
+    min-height: 280px;
+  }
+
+  .series-strip.open {
+    height: 220px;
+  }
+}

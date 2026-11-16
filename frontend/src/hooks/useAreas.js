@@ -7,7 +7,7 @@ export function useAreas(mode) {
   const [countryIso, setCountryIso] = useState("PAK");
   const [countries, setCountries] = useState([]);
   const [areas, setAreas] = useState([]);
-  const [selected, setSelected] = useState([]);
+  const [slots, setSlots] = useState([null, null]);
   const [loadingMap, setLoadingMap] = useState(true);
   const [mapError, setMapError] = useState("");
 
@@ -45,27 +45,29 @@ export function useAreas(mode) {
 
   useEffect(() => {
     if (mode === "one") {
-      setSelected((current) => current.slice(0, 1));
+      setSlots((current) => [current[0], null]);
     }
   }, [mode]);
 
   function chooseLevel(next) {
     setLevel(next);
-    setSelected([]);
+    setSlots([null, null]);
     setMapError("");
   }
 
   function chooseCountry(iso) {
     setCountryIso(iso);
-    setSelected([]);
+    setSlots([null, null]);
   }
 
-  function pick(item) {
-    setSelected((current) => {
-      const exists = current.some((entry) => entry.id === item.id);
-      if (exists) return current.filter((entry) => entry.id !== item.id);
-      if (mode === "one") return [item];
-      return [...current, item].slice(-2);
+  function pickAt(index, item) {
+    setSlots((current) => {
+      const next = [current[0], current[1]];
+      const slot = mode === "one" ? 0 : index;
+      const same = next[slot] && next[slot].id === item.id;
+      next[slot] = same ? null : item;
+      if (mode === "one") next[1] = null;
+      return next;
     });
   }
 
@@ -73,7 +75,7 @@ export function useAreas(mode) {
     setLevel("city");
     const ids = [demo.place_id, demo.place_id_2].filter(Boolean);
     const chosen = ids.map((id) => CITIES.find((city) => city.id === id)).filter(Boolean);
-    setSelected(chosen);
+    setSlots([chosen[0] || null, chosen[1] || null]);
   }
 
   return {
@@ -82,12 +84,13 @@ export function useAreas(mode) {
     countries,
     areas,
     cities: CITIES,
-    selected,
+    slots,
+    selected: slots.filter(Boolean),
     loadingMap,
     mapError,
     chooseLevel,
     chooseCountry,
-    pick,
+    pickAt,
     selectDemo,
   };
 }
